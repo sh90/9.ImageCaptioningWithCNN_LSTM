@@ -18,6 +18,7 @@
     
     Key idea: Agents combine reasoning, planning, and actions. They don’t just answer—they take steps on your behalf.
 ```
+```
 3. Deep Learning (CNN & LSTM)
 
     Now let’s go back a bit. Before today’s flashy GenAI and AI Agents, deep learning laid the foundation.
