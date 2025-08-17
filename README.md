@@ -30,6 +30,7 @@
     Example: Recognizing cats vs dogs in photos.
     
     Key strength: CNNs are really good at spotting patterns in pixels (shapes, edges, colors).
+    https://blog.roboflow.com/what-is-resnet-50/ 
     
     LSTM (Long Short-Term Memory networks):
     
