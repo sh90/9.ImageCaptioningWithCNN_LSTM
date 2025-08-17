@@ -54,4 +54,4 @@ Attention Mechanisms (2016+): Models learn to “look” at different image regi
 
 Transformers & Foundation Models (2020+): Pretrained on massive image-text pairs → generalize better (e.g., BLIP, CLIP, GPT-4V).
 
-👉 Teaching Note: We’ll see this evolution live — from a simple CNN+LSTM to a modern BLIP Transformer that works zero-shot.
+We’ll see this evolution live — from a simple CNN+LSTM to a modern BLIP Transformer that works zero-shot.
