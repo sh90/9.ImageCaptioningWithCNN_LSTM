@@ -60,6 +60,10 @@ from tqdm import tqdm
 import nltk
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 
+import certifi, os
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())  # helps HF/requests too
+
 
 # -------------------------
 # Config & reproducibility
