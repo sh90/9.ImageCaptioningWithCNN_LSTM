@@ -1,12 +1,12 @@
 # captioning_with_attention.py
 """
-Image Captioning with Attention (Show, Attend and Tell style)
+Image Captioning with Attention
 ------------------------------------------------------------
 - Encoder: ResNet50 (pretrained), keep spatial feature map (not just a single vector)
-- Decoder: LSTM with Bahdanau/Additive attention over spatial features
+- Decoder: LSTM with Additive attention over spatial features
 - Dataset: the same tiny 6-image set from tiny_dataset_setup.py
 
-
+Teaching Notes:
 - Unlike the classic CNN+LSTM (single global image vector), here we keep a grid of features.
 - At each word step, the decoder computes an attention distribution over the grid and forms a
   context vector — "looking" at the relevant region before predicting the next word.
@@ -36,7 +36,8 @@ random.seed(SEED)
 torch.manual_seed(SEED)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-DATA_DIR = "data/tiny"
+#DATA_DIR = "data/tiny"
+DATA_DIR = "data/tiny_more_v1"
 IM_DIR = os.path.join(DATA_DIR, "images")
 CAP_PATH = os.path.join(DATA_DIR, "captions.json")
 
@@ -57,49 +58,6 @@ def build_vocab(captions: Dict[str, List[str]], min_freq: int = 1) -> Tuple[Dict
     itos = [PAD, BOS, EOS, UNK] + sorted([w for w, c in freqs.items() if c >= min_freq])
     stoi = {w: i for i, w in enumerate(itos)}
     return stoi, itos
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-def visualize_attention_overlay(image_path, words, alphas, grid_hw, out_path=None, cols=6):
-    """
-    Overlay attention heatmaps per word on the image.
-
-    Args:
-      image_path: path to the original RGB image
-      words: list[str] tokens produced (without <bos>/<eos>/<pad>)
-      alphas: np.ndarray of shape [T, N] where N = H*W (softmaxed)
-      grid_hw: (H, W) spatial size from the encoder (e.g., (7,7))
-      out_path: optional path to save the figure; if None -> just show
-      cols: number of columns in the subplot grid
-    """
-    from PIL import Image
-    img = Image.open(image_path).convert("RGB").resize((224, 224))  # match training size
-    H, W = grid_hw
-    T = len(words)
-    rows = int(np.ceil(T / cols))
-
-    plt.figure(figsize=(cols * 3, rows * 3))
-    for t, word in enumerate(words):
-        plt.subplot(rows, cols, t + 1)
-        plt.axis("off")
-        plt.title(word, fontsize=10)
-
-        # alpha_t: [N] -> [H, W] -> upsample to image size
-        alpha_t = alphas[t].reshape(H, W)
-        alpha_img = Image.fromarray((alpha_t / alpha_t.max() * 255).astype(np.uint8))
-        alpha_img = alpha_img.resize(img.size, resample=Image.BILINEAR)
-
-        # show base image then overlay heatmap
-        plt.imshow(img)
-        plt.imshow(alpha_img, cmap="jet", alpha=0.35)  # overlay
-    plt.tight_layout()
-    if out_path:
-        plt.savefig(out_path, dpi=150)
-        print(f"Saved attention grid to {out_path}")
-    else:
-        plt.show()
-
 
 # -------------------------
 # Dataset
@@ -244,36 +202,6 @@ class AttnLSTMDecoder(nn.Module):
             if (next_tok == eos_idx).all():
                 break
         return torch.cat(outputs, dim=1)                # [B, <=max_len]
-    @torch.no_grad()
-    def greedy_decode_with_attention(self, feats, bos_idx, eos_idx, max_len=16):
-        """
-        Same as greedy_decode(), but also returns attention weights (alphas) for each step.
-        Returns:
-          tokens: [B, <=max_len]
-          alphas: [B, T, N]  (T = generated length, N = H*W spatial locations)
-        """
-        B, N, C = feats.shape
-        h, c = self.init_state(feats)
-        inp_tok = torch.full((B,), bos_idx, dtype=torch.long, device=feats.device)
-        outputs = []
-        alphas_all = []
-
-        for _ in range(max_len):
-            context, alpha = self.attn(h, feats)         # alpha: [B, N]
-            emb = self.embed(inp_tok)                    # [B, E]
-            step_in = torch.cat([emb, context], dim=-1)  # [B, E+C]
-            h, c = self.lstm(step_in, (h, c))
-            logits = self.fc(h)                           # [B, V]
-            next_tok = logits.argmax(dim=-1)             # [B]
-            outputs.append(next_tok.unsqueeze(1))
-            alphas_all.append(alpha.unsqueeze(1))        # [B,1,N]
-            inp_tok = next_tok
-            if (next_tok == eos_idx).all():
-                break
-
-        tokens = torch.cat(outputs, dim=1)               # [B, T]
-        alphas = torch.cat(alphas_all, dim=1)            # [B, T, N]
-        return tokens, alphas
 
 # -------------------------
 # Helpers
@@ -389,14 +317,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # --- Attention viz demo on one image (optional) ---
-    sample_fname = sorted([f for f in os.listdir(IM_DIR) if f.lower().endswith((".jpg",".jpeg",".png"))])[0]
-    sample_path = os.path.join(IM_DIR, sample_fname)
-    x = img_tfms(Image.open(sample_path).convert("RGB")).unsqueeze(0).to(device)
-    feats, grid_hw = encoder(x)  # feats: [1, N, C], grid_hw: (H,W)
-    ids, alphas = decoder.greedy_decode_with_attention(feats, bos_idx, eos_idx, max_len=16)
-    # convert to clean words and strip specials
-    gen_ids = ids[0].tolist()
-    words = [w for w in (itos[i] for i in gen_ids) if w not in (BOS, EOS, PAD)]
-    visualize_attention_overlay(sample_path, words, alphas[0].cpu().numpy(), grid_hw, out_path="attention_grid.png")
-
