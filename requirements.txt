@@ -1,0 +1,23 @@
+# Core deep learning
+
+torch==2.2.2
+torchvision==0.17.2
+torchaudio==2.2.2
+#torchvision
+#torchaudio
+
+# General utilities
+numpy
+tqdm
+pillow
+requests
+datasets
+certifi
+
+# NLP + metrics
+nltk
+
+# Hugging Face + transformers
+transformers
+timm
+accelerate
