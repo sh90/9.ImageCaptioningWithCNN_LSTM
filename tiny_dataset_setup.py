@@ -52,7 +52,7 @@ def prepare_tiny_dataset():
 
     for fname, url in urls.items():
         path = f"data/tiny/images/{fname}"
-        if os.path.exists(path) and not force:
+        if os.path.exists(path):
             print(f"Skip existing {path} (use --force to overwrite)")
             continue
         try:
