@@ -2,45 +2,78 @@
 import os
 import io
 import json
+import argparse
 import requests
 from PIL import Image
 
-def prepare_tiny_dataset():
+# Tip: run with --force if you want to overwrite any existing image files.
+
+def prepare_tiny_dataset(force: bool = False):
     os.makedirs("data/tiny/images", exist_ok=True)
 
+    # Updated captions (bike & pizza fixed to match the new images)
     captions = {
-        "dog.jpg":   ["a dog is running in the grass", "a brown dog runs on a field"],
-        "cat.jpg":   ["a cat is sitting on a sofa", "a small cat sits on the couch"],
-        "bike.jpg":  ["a person rides a bicycle on the street", "a cyclist is riding a bike"],
-        "pizza.jpg": ["a pizza is on a plate", "a tasty pizza sits on a table"],
-        "beach.jpg": ["people are on a sandy beach", "a sunny day at the beach"],
-        "car.jpg":   ["a red car is parked on the road", "a car stands on the street"],
+        "dog.jpg": [
+            "a dog is running in the grass",
+            "a brown dog runs on a field"
+        ],
+        "cat.jpg": [
+            "a cat is sitting on a sofa",
+            "a small cat sits on the couch"
+        ],
+        "bike.jpg": [
+            "a blue bicycle with shopping bags is parked by a stone wall",
+            "a parked bicycle loaded with groceries by the sidewalk"
+        ],
+        "pizza.jpg": [
+            "a pepperoni pizza with olives and mushrooms on a wooden table",
+            "a slice of cheesy pepperoni pizza being served"
+        ],
+        "beach.jpg": [
+            "people are on a sandy beach",
+            "a sunny day at the beach"
+        ],
+        "car.jpg": [
+            "a red car is parked on the road",
+            "a car stands on the street"
+        ],
     }
 
+    # Image URLs (bike & pizza now point to Wikimedia Commons originals)
     urls = {
         "dog.jpg":   "https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200",
         "cat.jpg":   "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=1200",
-        "bike.jpg":  "https://images.unsplash.com/photo-1518655048521-f130df041f66?q=80&w=1200",
-        "pizza.jpg": "https://images.unsplash.com/photo-1542281286-9e0a16bb7366?q=80&w=1200",
+        # ✅ Correct bicycle photo (direct JPG from Wikimedia)
+        "bike.jpg":  "https://upload.wikimedia.org/wikipedia/commons/4/41/Packed_bicycle.jpg",
+        # ✅ Correct pizza photo (direct JPG from Wikimedia)
+        "pizza.jpg": "https://upload.wikimedia.org/wikipedia/commons/8/86/Pizza_%281%29.jpg",
         "beach.jpg": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200",
         "car.jpg":   "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1200",
     }
 
+    headers = {"User-Agent": "image-captioning-demo/1.0 (+https://example.com)"}
+
     for fname, url in urls.items():
         path = f"data/tiny/images/{fname}"
-        if not os.path.exists(path):
-            try:
-                print(f"Downloading {fname}...")
-                img = Image.open(io.BytesIO(requests.get(url, timeout=20).content)).convert("RGB")
-                img.save(path, format="JPEG", quality=90)
-                print("Saved", path)
-            except Exception as e:
-                print(f"Failed to download {fname} from {url}: {e}")
+        if os.path.exists(path) and not force:
+            print(f"Skip existing {path} (use --force to overwrite)")
+            continue
+        try:
+            print(f"Downloading {fname} …")
+            resp = requests.get(url, timeout=30, headers=headers)
+            resp.raise_for_status()
+            img = Image.open(io.BytesIO(resp.content)).convert("RGB")
+            img.save(path, format="JPEG", quality=90)
+            print("Saved", path)
+        except Exception as e:
+            print(f"Failed to download {fname} from {url}: {e}")
 
     with open("data/tiny/captions.json", "w") as f:
         json.dump(captions, f, indent=2)
-
     print("Tiny dataset ready with", len(captions), "images at data/tiny/images")
 
 if __name__ == "__main__":
-    prepare_tiny_dataset()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true", help="Redownload and overwrite images if they already exist")
+    args = parser.parse_args()
+    prepare_tiny_dataset(force=args.force)
