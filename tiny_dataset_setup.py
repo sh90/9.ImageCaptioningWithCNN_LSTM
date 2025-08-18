@@ -8,7 +8,7 @@ from PIL import Image
 
 # Tip: run with --force if you want to overwrite any existing image files.
 
-def prepare_tiny_dataset(force: bool = False):
+def prepare_tiny_dataset():
     os.makedirs("data/tiny/images", exist_ok=True)
 
     # Updated captions (bike & pizza fixed to match the new images)
@@ -39,13 +39,10 @@ def prepare_tiny_dataset(force: bool = False):
         ],
     }
 
-    # Image URLs (bike & pizza now point to Wikimedia Commons originals)
     urls = {
         "dog.jpg":   "https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=1200",
         "cat.jpg":   "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?q=80&w=1200",
-        # ✅ Correct bicycle photo (direct JPG from Wikimedia)
         "bike.jpg":  "https://upload.wikimedia.org/wikipedia/commons/4/41/Packed_bicycle.jpg",
-        # ✅ Correct pizza photo (direct JPG from Wikimedia)
         "pizza.jpg": "https://upload.wikimedia.org/wikipedia/commons/8/86/Pizza_%281%29.jpg",
         "beach.jpg": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200",
         "car.jpg":   "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1200",
@@ -73,7 +70,4 @@ def prepare_tiny_dataset(force: bool = False):
     print("Tiny dataset ready with", len(captions), "images at data/tiny/images")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--force", action="store_true", help="Redownload and overwrite images if they already exist")
-    args = parser.parse_args()
-    prepare_tiny_dataset(force=args.force)
+    prepare_tiny_dataset()
