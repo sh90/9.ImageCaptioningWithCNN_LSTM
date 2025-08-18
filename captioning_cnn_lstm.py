@@ -38,7 +38,7 @@ A tiny, end-to-end Image Captioning demo:
 - Trains on a micro dataset (6 images, 2 captions each) for fast demo.
 
 ==========================================================
-#### Teaching Note: Why this project?
+####  Why this project?
 Classic captioning shows the **encoder–decoder** idea that underpins machine translation,
 speech recognition, and even modern Transformer-based LLMs. We "see" with the encoder,
 and we "tell" with the decoder. It's the simplest ‘multimodal’ pipeline you can demo live.
@@ -83,7 +83,6 @@ PAD, BOS, EOS, UNK = "<pad>", "<bos>", "<eos>", "<unk>"
 def tokenize(text: str) -> List[str]:
     """
     Lowercase + extract alphabetic tokens (super simple tokenizer).
-    For real projects you'd use a proper tokenizer/BPE.
     """
     return re.findall(r"[a-z]+", text.lower())
 
@@ -94,7 +93,7 @@ def build_vocab(captions: Dict[str, List[str]], min_freq: int = 1) -> Tuple[Dict
     Keeps words with frequency >= min_freq.
 
     ==========================================================
-    #### Teaching Note: Vocab & Tokens
+    ####  Vocab & Tokens
     We turn words into integers so the model can learn distributions over them.
     Special tokens:
       <bos>  : "start of sentence"
@@ -146,7 +145,7 @@ def collate_fn(batch):
     Pads sequences in a batch and prepares (inputs, targets) for teacher forcing.
 
     ==========================================================
-    #### Teaching Note: Teacher Forcing
+    #### Teacher Forcing
     During training, the decoder receives the **ground truth previous word**
     as input (not its own prediction). This stabilizes learning and speeds it up.
     At inference, we don't have ground truth — we feed back our **predictions**.
@@ -167,7 +166,7 @@ class CNNEncoder(nn.Module):
     ResNet50 (pretrained) → Global Average Pooling → Linear projection.
 
     ==========================================================
-    #### Teaching Note: Transfer Learning
+    ####  Transfer Learning
     We reuse a CNN already trained on ImageNet (1M+ images). We **freeze**
     those weights so, on a tiny dataset, we don't overfit. The CNN becomes
     a generic "visual feature extractor" for our captioning task.
@@ -194,7 +193,7 @@ class LSTMDecoder(nn.Module):
       - its hidden state (initialized from the image embedding)
 
     ==========================================================
-    #### Teaching Note: Why LSTM here?
+    ####  Why LSTM here?
     Captions are sequences. LSTMs model sequential dependencies and were the
     standard before Transformers. They still make a great teaching example.
     ==========================================================
@@ -230,7 +229,7 @@ class LSTMDecoder(nn.Module):
         and stop when <eos> appears (or when max_len is reached).
 
         ==========================================================
-        #### Teaching Note: Greedy vs. Beam Search
+        ####  Greedy vs. Beam Search
         Greedy = pick the most likely next word each time (fast, simple).
         Beam  = keep top-k partial sequences and expand them (better quality).
         For a live demo, greedy is perfect — one line, fast, predictable.
